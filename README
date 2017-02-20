@@ -1,0 +1,14 @@
+                       +---------------------------+
+                       |     Mikhail Rezazadeh     |
+                       |      June 21st, 2016      |
+                       |        Chess Clock        |
+                       +---------------------------+
+
+Dependendices:
+	python3-tk
+
+The graphical interface should be self explanatory. Just run:
+
+    username@hostname<pathname>/ChessClock/$ python ChessClock.py
+
+
