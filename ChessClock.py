@@ -44,6 +44,10 @@ class _GetchWindows:
         return msvcrt.getch()
 
 
+'''
+PlayerHeader Class: a class to represent player information, and to 
+	interface on setup. 
+'''
 class PlayerHeader:
 	Font              = 'Garamond'
 	PrimaryFontSize   = 50
@@ -101,7 +105,11 @@ class PlayerHeader:
 		self.ClockDisplay.config(text = timestamp)
 
     
-
+'''
+AnalogueClock class: a window displaying a traditional analogue clock, 
+in addition to a digital clock at the top of the window with microsecond
+resolution. This represents one half of the total chess clock.  
+'''
 class AnalogueClock:
 	ClockRadius = 300
 	Offset = 10
@@ -142,16 +150,15 @@ class AnalogueClock:
 		self.SecondAngle = 0
 
 
-
+	#Draw the circular border 
 	def DrawClock(self):
-		print("drawing clock!")
 		self.CanvasBox.create_oval(AnalogueClock.CircleStart, AnalogueClock.CircleStart,
 			                       AnalogueClock.CircleEnd, AnalogueClock.CircleEnd,
 			                       fill = self.Player, outline = self.Opposite, width = AnalogueClock.ClockWidth)
 
+	#Draw ticks around the edges 
 	def DrawTicks(self):
 		for i in range(600):
-			#print(i)
 			if (i%50) != 0:
 				tickAngle   = i * AnalogueClock.OneSec_Arc
 				innerRadius = AnalogueClock.OneSec_IR
@@ -191,6 +198,11 @@ class AnalogueClock:
 		self.CanvasBox.coords(self.SecondHand, (AnalogueClock.ClockRadius + AnalogueClock.Offset, AnalogueClock.ClockRadius + AnalogueClock.Offset, x, y))
 
 
+'''
+Player class: a class to represent the Window of a player (black or white). 
+Messages are set at the top of the window, and information about whether 
+it's currently the player's turn is maintained. 
+'''
 class Player:
 	Font = 'Garamond'
 	ButtonWidth       = 20
@@ -218,8 +230,8 @@ class Player:
 		self.EntryBox.bind('<Return>', self.GetName)
 
 
-		# self.ButtonBox = Button(self.Master, width=Player.ButtonWidth, text=Player.ButtonNameString, command = self.GetName)
-		# self.ButtonBox.pack()
+		self.ButtonBox = Button(self.Master, width=Player.ButtonWidth, text=Player.ButtonNameString, command = self.GetName)
+		self.ButtonBox.pack()
 		self.Microseconds = 0
 		self.Master.mainloop()
 
@@ -230,8 +242,8 @@ class Player:
 	def SetButtonCommand(self, new_command):
 		self.ButtonBox.config(command = new_command)
 
+	# On Game Setup, accept the person's name
 	def GetName(self, event):
-
 		string_entry = self.EntryBox.get()
 		if len(string_entry) == 0:
 			self.Header.SetMessageColor(PlayerHeader.ErrorColor)
@@ -245,11 +257,12 @@ class Player:
 			self.Header.SetName(string_entry)
 			self.ClearEntry()
 			self.EntryBox.bind('<Return>', self.GetTime)
-			#self.ButtonBox.config(text = Player.ButtonTimeString)
-			#self.SetButtonCommand(self.GetTime)
+			self.ButtonBox.config(text = Player.ButtonTimeString)
+			self.SetButtonCommand(self.GetTime)
 			self.Header.SetMessageColor(PlayerHeader.NonErrorColor)
 			self.Header.SetMessage(PlayerHeader.GoodNameMessage)
 
+	#On Game Setup, accept a new time 
 	def GetTime(self, event):
 		timelist = self.EntryBox.get().split(':')
 		if len(timelist) != 2:
@@ -281,7 +294,7 @@ class Player:
 			return
 
 		self.Header.MessageDisplay.pack_forget()
-		#self.ButtonBox.pack_forget()
+		self.ButtonBox.pack_forget()
 		self.EntryBox.pack_forget()
 		self.Microseconds = Minutes*Player.Microseconds_per_Minute + Seconds * Player.Microseconds_per_Second
 		self.Clock.DrawMinuteHand(self.Microseconds)
@@ -292,12 +305,14 @@ class Player:
 		self.SetSecondHand()
 		self.SetMinuteHand()
     	
-
+	#Set the digital clock
 	def SetDigitalClock(self):
 		if Player.Turn == self.Player:
 			timestamp = self.Header.TimeStamp(self.Microseconds)
 			self.Header.SetClock(timestamp)
 		self.Header.ClockDisplay.after(10, self.SetDigitalClock)
+
+	#Set the analogue clock 
 	def SetSecondHand(self):
 		if Player.Turn == self.Player:
 			Angle = (((self.Microseconds*Player.Microsecond_Conversion)%60)/60)*360 + 180
@@ -313,20 +328,29 @@ class Player:
 			self.Clock.DrawMinuteHand(self.Microseconds)
 		self.Clock.CanvasBox.after(10, self.SetMinuteHand)
 
+	#To be called when self.Microseconds is updated. 
 	def Tick(self):
 		self.SetDigitalClock()
 		self.SetSecondHand()
 		self.SetMinuteHand()
 
+'''
+ChessClock class: a wrapper class for the entire GUI. 
+'''
 class ChessClock:
 	def __init__ (self):
 		self.Turn = 'white'
 		self.WhitePlayer = Player('white')
-		print("\n\n\ninitialized white player!\n\n\n")
 		self.BlackPlayer = Player('black')
 		self.Alarm = False
 
 
+'''
+Switch thread: a Thread to be running in the backround 
+which is listening for keyboard taps on any key of the keyboard. 
+When a key is tapped, the current player's clock is paused 
+and the other player's clock is started. 
+'''
 def Switch(clock):
 	global Exit
 	while clock.WhitePlayer.Microseconds > 0 and clock.BlackPlayer.Microseconds > 0:
